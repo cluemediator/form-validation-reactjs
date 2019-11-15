@@ -15,6 +15,16 @@ class App extends Component {
         language: [],
         country: null,
         zipCode: ""
+      },
+      formErrors: {
+        name: null,
+        email: null,
+        mobile: null,
+        password: null,
+        confirmPassword: null,
+        gender: null,
+        language: null,
+        country: null
       }
     };
     this.countryList = [
@@ -50,7 +60,7 @@ class App extends Component {
 
   handleChange = e => {
     const { name, value, checked } = e.target;
-    const { form } = this.state;
+    const { form, formErrors } = this.state;
     let formObj = {};
     if (name === "language") {
       // handle the change event of language field
@@ -72,15 +82,83 @@ class App extends Component {
         [name]: value
       };
     }
-    this.setState({ form: formObj });
+    this.setState({ form: formObj }, () => {
+      if (!Object.keys(formErrors).includes(name)) return;
+      let formErrorsObj = {};
+      if (name === "password" || name === "confirmPassword") {
+        let refValue = this.state.form[
+          name === "password" ? "confirmPassword" : "password"
+        ];
+        const errorMsg = this.validateField(name, value, refValue);
+        formErrorsObj = { ...formErrors, [name]: errorMsg };
+        if (!errorMsg && refValue) {
+          formErrorsObj.confirmPassword = null;
+          formErrorsObj.password = null;
+        }
+      } else {
+        const errorMsg = this.validateField(
+          name,
+          name === "language" ? this.state.form["language"] : value
+        );
+        formErrorsObj = { ...formErrors, [name]: errorMsg };
+      }
+      this.setState({ formErrors: formErrorsObj });
+    });
   }
 
+  validateField = (name, value, refValue) => {
+    let errorMsg = null;
+    switch (name) {
+      case "name":
+        if (!value) errorMsg = "Please enter Name.";
+        break;
+      case "email":
+        if (!value) errorMsg = "Please enter Email.";
+        else if (!/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@(([[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(value))
+          errorMsg = "Please enter valid Email.";
+        break;
+      case "mobile":
+        if (!value) errorMsg = "Please enter Mobile.";
+        break;
+      case "country":
+        if (!value) errorMsg = "Please select Country.";
+        break;
+      case "gender":
+        if (!value) errorMsg = "Please select Gender.";
+        break;
+      case "password":
+        // refValue is the value of Confirm Password field
+        if (!value) errorMsg = "Please enter Password.";
+        else if (refValue && value !== refValue)
+          errorMsg = "Password and Confirm Password does not match.";
+        break;
+      case "confirmPassword":
+        // refValue is the value of Password field
+        if (!value) errorMsg = "Please enter Confirm Password.";
+        else if (refValue && value !== refValue)
+          errorMsg = "Password and Confirm Password does not match.";
+        break;
+      case "language":
+        if (value.length === 0) errorMsg = "Please select Language.";
+        break;
+      default:
+        break;
+    }
+    return errorMsg;
+  };
+
   handleSubmit = () => {
-    console.log('Data: ', this.state.form);
+    const { form, formErrors } = this.state;
+    const errorObj = this.validateForm(form, formErrors, this.validateField);
+    if (Object.keys(errorObj).length != 0) {
+      this.setState({ formErrors: { ...formErrors, ...errorObj } });
+      return false;
+    }
+    console.log('Data: ', form);
   };
 
   render() {
-    const { form } = this.state;
+    const { form, formErrors } = this.state;
     return (
       <div className="signup-box">
         <p className="title">Sign up</p>
@@ -98,6 +176,7 @@ class App extends Component {
                 onChange={this.handleChange}
                 onBlur={this.handleChange}
               />
+              {formErrors.name && <span className="err">{formErrors.name}</span>}
             </div>
             <div className="form-group">
               <label>
@@ -109,7 +188,9 @@ class App extends Component {
                 name="email"
                 value={form.email}
                 onChange={this.handleChange}
+                onBlur={this.handleChange}
               />
+              {formErrors.email && <span className="err">{formErrors.email}</span>}
             </div>
             <div className="form-group">
               <label>
@@ -121,7 +202,9 @@ class App extends Component {
                 name="password"
                 value={form.password}
                 onChange={this.handleChange}
+                onBlur={this.handleChange}
               />
+              {formErrors.password && <span className="err">{formErrors.password}</span>}
             </div>
             <div className="form-group">
               <label>
@@ -133,7 +216,9 @@ class App extends Component {
                 name="confirmPassword"
                 value={form.confirmPassword}
                 onChange={this.handleChange}
+                onBlur={this.handleChange}
               />
+              {formErrors.confirmPassword && <span className="err">{formErrors.confirmPassword}</span>}
             </div>
             <div className="form-group">
               <label className="mr-3">
@@ -154,6 +239,7 @@ class App extends Component {
                   );
                 })}
               </div>
+              {formErrors.language && <span className="err">{formErrors.language}</span>}
             </div>
           </div>
           <div className="col-md-6">
@@ -167,8 +253,10 @@ class App extends Component {
                 name="mobile"
                 value={form.mobile}
                 onChange={this.handleChange}
+                onBlur={this.handleChange}
                 onKeyPress={this.validateNumber}
               />
+              {formErrors.mobile && <span className="err">{formErrors.mobile}</span>}
             </div>
             <div className="form-group">
               <label className="mr-3">
@@ -194,6 +282,7 @@ class App extends Component {
                   /> Female
                 </label>
               </div>
+              {formErrors.gender && <span className="err">{formErrors.gender}</span>}
             </div>
             <div className="form-group">
               <label>Zip Code:</label>
@@ -222,18 +311,19 @@ class App extends Component {
                   })
                 }
               />
+              {formErrors.country && <span className="err">{formErrors.country}</span>}
             </div>
           </div>
         </div>
 
-  <div className="form-group">
-    <input
-      type="button"
-      className="btn btn-primary"
-      value="Submit"
-      onClick={this.handleSubmit}
-    />
-  </div>
+        <div className="form-group">
+          <input
+            type="button"
+            className="btn btn-primary"
+            value="Submit"
+            onClick={this.handleSubmit}
+          />
+        </div>
       </div>
     );
   }

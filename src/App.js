@@ -150,7 +150,7 @@ class App extends Component {
   handleSubmit = () => {
     const { form, formErrors } = this.state;
     const errorObj = this.validateForm(form, formErrors, this.validateField);
-    if (Object.keys(errorObj).length != 0) {
+    if (Object.keys(errorObj).length !== 0) {
       this.setState({ formErrors: { ...formErrors, ...errorObj } });
       return false;
     }
@@ -301,7 +301,7 @@ class App extends Component {
               <ReactSelect
                 name="country"
                 options={this.countryList}
-                value={this.countryList.find(x => x.value == form.country)}
+                value={this.countryList.find(x => x.value === form.country)}
                 onChange={e =>
                   this.handleChange({
                     target: {
